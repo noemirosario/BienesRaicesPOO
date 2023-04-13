@@ -1,13 +1,14 @@
 <?php
-    require '../../includes/funciones.php';
+    require '../../includes/app.php';
     $auth = estadoAutenticado();
+    use App\Propiedad;
 
-    if (!$auth){
-        header('Location: /');
-    }
+    // $propiedad = new Propiedad;
+
+    // debug($propiedad);
+    estadoAutenticado();
 
     // base de datos
-    require '../../includes/config/database.php';
     $db = conectarDB ();
 
     // consulta para obtener los vendedores
@@ -28,18 +29,14 @@
 
     // ejectuta el codigo despues de que el usuario envia el fromulario
     if($_SERVER["REQUEST_METHOD"] === 'POST'){
-        // MUESTRA EL ARRAY
-        // echo "<pre>";
-        // var_dump(($_POST));
-        // echo "</pre>";
 
-        // echo "<pre>";
-        // var_dump(($_FILES));
-        // echo "</pre>";
+        $propiedad = new Propiedad($_POST);
+        $propiedad -> guardar();
 
-        // https://www.php.net/manual/es/filter.filters.sanitize.php
+        // debug($propiedad);
 
-        $nombre = mysqli_real_escape_string( $db, $_POST['titulo'] );
+
+        $nombre = mysqli_real_escape_string( $db, $_POST['nombre'] );
         $precio =  mysqli_real_escape_string($db,  $_POST['precio']);
         $descripcion =  mysqli_real_escape_string($db,  $_POST['descripcion']);
         $habitaciones =  mysqli_real_escape_string($db,  $_POST['habitaciones']);
@@ -54,10 +51,6 @@
         echo "<pre>";
         var_dump($imagen);        
         echo "</pre>";
-
-        // exit;
-
-
         if (!$nombre){
             $errores[] = "Debes añadir un titulo";
         }
@@ -120,19 +113,7 @@
             // subir la imagen al servidor
             move_uploaded_file($imagen['tmp_name'], $carpetaImagenes . $nombreImagen );
 
-            // insertar en la base de datos
-            $query = " INSERT INTO propiedades (nombre, precio, imagen, descripcion, habitaciones, wc, estacionamiento, creado, idVendedor) VALUES 
-            ( 
-                '$nombre', 
-                '$precio',
-                '$nombreImagen',
-                '$descripcion',
-                '$habitaciones',
-                '$wc',
-                '$estacionamiento',
-                '$creado',
-                '$idVendedor'
-            )";
+            
 
             // echo $query;
     
@@ -231,21 +212,21 @@
     <fieldset>
         <legend>Vendedor</legend>
 
-        <select name="vendedor" id="">
+        <select name="idVendedor" id="nombre_vendedor">
             <option value="">--Seleccione</option>
-            <?php while($vendedor = mysqli_fetch_assoc($resultadoVendedor)) : ?>
+            <?php while($row = mysqli_fetch_assoc($resultadoVendedor)) : ?>
             <option 
                 <?php 
                 // mantener seleccionado una opcion
-                echo $idVendedor === $vendedor['idVendedor'] ? 'selected' : '';
-                ?> value="<?php echo $vendedor['idVendedor']  ?>">
+                echo $vendedor === $row['idVendedor'] ? 'selected' : '';
+                ?> value="<?php echo $row['idVendedor']  ?>">
                 <?php 
                 echo 
-                    $vendedor['nombre'] 
+                    $row['nombre'] 
                     . " ". 
-                    $vendedor['apellidoPaterno']
+                    $row['apellidoPaterno']
                     . " ". 
-                    $vendedor['apellidoMaterno'];
+                    $row['apellidoMaterno'];
                 ?>
             </option>
 

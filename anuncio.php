@@ -7,8 +7,9 @@
         header('Location: /');
     }
 
+    require 'includes/app.php';
+
     // importar la bd
-    require 'includes/config/database.php';
     $db = conectarDB();
 
     //consultar
@@ -23,7 +24,6 @@
     }
     $propiedad = mysqli_fetch_assoc($resultadoSelect);
 
-    require 'includes/funciones.php';
     incluirTemplate('header');
 
 ?>
