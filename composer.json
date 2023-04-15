@@ -14,5 +14,7 @@
             "email": "noemi_1212rosario@hotmail.com"
         }
     ],
-    "require": {}
+    "require": {
+        "intervention/image": "^2.7"
+    }
 }

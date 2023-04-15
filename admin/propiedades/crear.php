@@ -2,6 +2,7 @@
     require '../../includes/app.php';
     $auth = estadoAutenticado();
     use App\Propiedad;
+    use Intervention\Image\ImageManagerStatic as Image;
 
     // $propiedad = new Propiedad;
 
@@ -16,7 +17,7 @@
     $resultadoVendedor = mysqli_query($db, $queryVendedor);
 
     //array con mensaje de errores
-    $errores = [];
+    $errores = Propiedad::getErrores();
 
     $nombre = '';
     $precio = '';
@@ -29,104 +30,49 @@
 
     // ejectuta el codigo despues de que el usuario envia el fromulario
     if($_SERVER["REQUEST_METHOD"] === 'POST'){
-
+        // se crea nueva instancia 
         $propiedad = new Propiedad($_POST);
-        $propiedad -> guardar();
 
+        //Define la extensión para el archivo
+        if ($imagen['type'] === 'image/jpeg') {
+            $exten = '.jpg';
+        } else{
+            $exten = '.png';
+        }
+
+        // generar nombre unico
+        $nombreImagen = md5(uniqid( rand(), true )) . $exten;
+
+        // setear la img
+        // realia un resize a la img  con invertation
+        if ($_FILES['imagen']['tmp_name']){
+            $imagen = Image::make($_FILES['imagen']['tmp_name']) -> fit(800,600);
+            $propiedad->setImagen($nombreImagen);
+        }
+
+        $errores= $propiedad -> validar();
         // debug($propiedad);
-
-
-        $nombre = mysqli_real_escape_string( $db, $_POST['nombre'] );
-        $precio =  mysqli_real_escape_string($db,  $_POST['precio']);
-        $descripcion =  mysqli_real_escape_string($db,  $_POST['descripcion']);
-        $habitaciones =  mysqli_real_escape_string($db,  $_POST['habitaciones']);
-        $wc = mysqli_real_escape_string($db,  $_POST['wc']);
-        $estacionamiento =  mysqli_real_escape_string($db,  $_POST['estacionamiento']);
-        $idVendedor =  mysqli_real_escape_string($db,  $_POST['vendedor']);
-        $creado = date('Y/m/d');
-
-        // asignar files hacia una variable 
-        $imagen = $_FILES['imagen'];
-
-        echo "<pre>";
-        var_dump($imagen);        
-        echo "</pre>";
-        if (!$nombre){
-            $errores[] = "Debes añadir un titulo";
-        }
-        if (!$precio){
-            $errores[] = "precio obligatorio";
-        }
-        if ( strlen($descripcion) < 50){
-            $errores[] = "la descripcion debe de ser de 50 caracteres";
-        }
-        if (!$habitaciones){
-            $errores[] = "numero de habitaciones obligatorio";
-        }
-        if (!$wc){
-            $errores[] = "numero de wc obligatorio";
-        }
-        if (!$estacionamiento){
-            $errores[] = "numero de estacionamiento obligatorio";
-        }
-        if (!$idVendedor){
-            $errores[] = "vendedor obligatorio";
-        }
-
-        if (!$imagen['name'] || $imagen['error']){
-            $errores[] = 'La imagen es obligatoria';
-        }
-
-        // validar por tamaño (1mb maximo)
-        $medida = 1000 * 1000;
-
-        if ($imagen['size'] > $medida){
-            $errores[] = 'La imagen es muy pesada';        
-        }
-
-
-        // echo "<pre>";
-        // var_dump(($errores));
-        // echo "</pre>";
 
         // revisa si el array esta vacio
         if (empty($errores)){
 
             // subida de archivos
             // crear carpeta
-
-            $carpetaImagenes = '../../imagenes/';
-            if (!is_dir($carpetaImagenes)){
-                mkdir($carpetaImagenes);
+            if (!is_dir(CARPETA_IMAGENES)){
+                mkdir(CARPETA_IMAGENES);
             }
+            //save img server
+            $imagen->save(CARPETA_IMAGENES . $nombreImagen);
 
-            //Define la extensión para el archivo
-            if ($imagen['type'] === 'image/jpeg') {
-                $exten = '.jpg';
-            } else{
-                $exten = '.png';
-            }
+            // GUARDAR EN LA BD
+            $resultado = $propiedad -> guardar();
 
-            // generar nombre unico
-            $nombreImagen = md5(uniqid( rand(), true )) . $exten  ;
 
-            // subir la imagen al servidor
-            move_uploaded_file($imagen['tmp_name'], $carpetaImagenes . $nombreImagen );
-
-            
-
-            // echo $query;
-    
-            $resultado = mysqli_query($db, $query);
             if ($resultado){
                 // Redireccionar al usuario.
                 header('Location: /admin?resultado=1');
             }
-    
         } 
-
-        // para probar la consulta
-        // echo $query;
     }
 
     incluirTemplate('header');
